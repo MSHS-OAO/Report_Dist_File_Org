@@ -1,69 +1,15 @@
-# GENERAL QUESTIONS -------------------------------------------------------
-
-# Future work: Templates for Shiny projects
-
-
-# GENERAL REMINDERS -------------------------------------------------------
-
-# 1. The outline can be customized based on project requirements.
-# 2. Sections may be added, removed, reordered, renamed, etc. as needed.
-# 3. Reference checklist for commenting and style guidelines
-# 4. Create Sections using the menu Code > Insert Section
-#    or the shortcut Ctrl+Shift+R
-# 5. Create subsections by starting a Section with two # signs (e.g. ##).  
-#    - See example within this section.
-
-
-## subsection example ----------------------------------------------------
-# The header for this section is an example of how to indent subsections by
-# adding an additional # symbol.
-
-
 # Libraries ---------------------------------------------------------------
-# Include all the packages that will be used throughout the code.
-# This is where packages can be installed if the user does not have them
-# currently installed.
-
-# Ensuring the appropriate package versions are used for the project based on
-# renv usage
-renv::restore()
-
-# tidyverse includes: dplyr, ggplot2, lubridate, purrr, readr, readxl,
-# reprex, stringr, tidyr...and more
-# See this link for full list: https://tidyverse.tidyverse.org/
 library(tidyverse)
 library(rstudioapi)
 library(zip)
+library(readxl)
 
 # Assigning Directory(ies) ------------------------------------------------
-# Define variables for frequently used root directories or full directories.
-# (This section could be combined with the Constants section.)
-# Reminder: avoid using setwd()
+prod_path <- paste0("J:/deans/Presidents/SixSigma/MSHS Productivity/",
+                    "Productivity/")
 
-## Shared Drive Path (Generic) --------------------------------------------
-sdp <- paste0("//researchsan02b/shr2/deans/Presidents")
-J_drive <- paste0("//researchsan02b/shr2/deans/Presidents")
-
-## J-drive Automatic Check ------------------------------------------------
-# Alternative mapping of the Windows Shared Drive using the drive letter
-# and an if-else check.
-# This code helps when the shared folder is mapped differently for different
-# users.
-# This code tests whether a user has the J drive mapped to Presidents or
-# deans
-if ("Presidents" %in% list.files("J://")) {
-  user_directory <- "J:/Presidents/"
-} else {
-  user_directory <- "J:/deans/Presidents/"
-}
-
-# an example project specific path that can be changed based on the project
-project_path <- paste0("/Operations Analytics and Optimization/Projects/",
-                       "Service Lines/Lab Kpi/Data/")
-
-# Here is the final path
-user_path <- paste0(user_directory, project_path,"*.*")
-
+#User selected directory where output files could be sent
+output_folder <- rstudioapi::selectDirectory(caption = "select output folder")
 
 # Constants ---------------------------------------------------------------
 # Define constants that will be used throughout the code. These are the
@@ -71,8 +17,119 @@ user_path <- paste0(user_directory, project_path,"*.*")
 
 
 # Data Import -------------------------------------------------------------
-# Importing data that is needed in the code whether it’s from the shared drive
-# or OneDrive or some other location.
+#Selecting and unzipping batch download file to get file paths
+bd_zip_file <- choose.files(caption = "select batch download zip file")
+
+unzip(bd_zip_file, exdir = output_folder)
+
+zip_folders <-
+  list.dirs(
+    path = output_folder,
+    full.names = TRUE
+  )
+
+zip_file_paths <-
+  list.files(
+    path = zip_folders,
+    full.names = TRUE
+  )
+
+zip_file_paths <- as.data.frame(zip_file_paths)
+
+#Importing data files
+rep_def <- read_xlsx(paste0(prod_path, "Universal Data/Mapping/",
+                            "MSHS_Reporting_Definition_Mapping.xlsx"))
+
+admin_def_field_all <- read.csv(paste0(prod_path, "Universal Data/Premier/",
+                                       "Dictionary Exports/AdminDef(All Entity).csv"), header = F)
+
+admin_def_field_multi <- read.csv(paste0(prod_path, "Universal Data/Premier/",
+                                         "Dictionary Exports/AdminDef(Multi-Entity).csv"), header = F) 
+
+admin_rep_dep_all <- read.csv(paste0(prod_path, "Universal Data/Premier/",
+                                     "Dictionary Exports/",
+                                     "AdministrativeReportingDepts(All Entity).csv"), header = F)
+
+admin_rep_dep_multi <- read.csv(paste0(prod_path, "Universal Data/Premier/",
+                                       "Dictionary Exports/",
+                                       "AdministrativeReportingDepts(Multi-Entity).csv"), header = F)
+
+dep_def_all <- read.csv(paste0(prod_path, "Universal Data/Premier/",
+                               "Dictionary Exports/DepartmentDef.csv"), header = F)
+
+dates <- read_xlsx(paste0(prod_path, "Universal Data/Mapping/",
+                          "MSHS_Pay_Cycle.xlsx"))
+
+#Adding column names
+colnames(admin_def_field_all) <- c("Corporation ID", "Hospital ID",	"Admin Definition Name", 
+                                   "Admin Definition Code", "Threshold Type",	"Effective Date",
+                                   "Time Period Cycle Code", "Single or Multi Entity")
+
+colnames(admin_def_field_multi) <- c("Corporation ID", "Hospital ID",	"Admin Definition Name", 
+                                     "Admin Definition Code", "Threshold Type",	"Effective Date",
+                                     "Time Period Cycle Code", "Single or Multi Entity")
+
+colnames(admin_rep_dep_all) <- c("Corporation ID", "Hospital ID", "Admin Definition Code",
+                                 "Effective Date", "Expiration Date", "Entity Code", "DRD Code",
+                                 "Action", "Single or Multi Entity")
+
+colnames(admin_rep_dep_multi) <- c("Corporation ID", "Hospital ID", "Admin Definition Code",
+                                   "Effective Date", "Expiration Date", "Entity Code", "DRD Code",
+                                   "Action", "Single or Multi Entity")
+
+colnames(dep_def_all) <- c("Corporation ID", "Hospital ID", "Reporting Definition Name",
+                           "Reporting Definition Code", "Department Code",
+                           "Internal Department Category", "Threshold Type", "Target Type",
+                           "Exclude from Rollup Report", "Effective Date", "Pay Cycle Code",
+                           "Exclude from Admin Rollup Report", "Exclude from Action Plan")
+
+#Combining dictionaries into data frame with only the columns needed
+System_Dep_Mapping <- left_join(admin_rep_dep_multi, admin_def_field_multi, 
+                                by = c("Admin Definition Code" = "Admin Definition Code")) %>%
+  select(`Corporation ID.x`, `Hospital ID.x`, `Entity Code`, `DRD Code`, `Admin Definition Code`,
+         `Admin Definition Name`)
+
+#Table of distribution dates
+dist_dates <- dates %>%
+  select(END.DATE, PREMIER.DISTRIBUTION) %>%
+  distinct() %>%
+  drop_na() %>%
+  arrange(END.DATE) %>%
+  #filter only on distribution end dates
+  filter(PREMIER.DISTRIBUTION %in% c(TRUE, 1),
+         #filter 3 weeks from run date (21 days) for data collection lag before run date
+         END.DATE < as.POSIXct(Sys.Date() - 21))
+#Table of non-distribution dates
+non_dist_dates <- dates %>%
+  select(END.DATE, PREMIER.DISTRIBUTION) %>%
+  distinct() %>%
+  drop_na() %>%
+  arrange(END.DATE) %>%
+  #filter only on distribution end dates
+  filter(PREMIER.DISTRIBUTION %in% c(FALSE, 0),
+         #filter 3 weeks from run date (21 days) for data collection lag before run date
+         END.DATE < as.POSIXct(Sys.Date() - 21))
+#Selecting current and previous distribution dates
+distribution <- format(dist_dates$END.DATE[nrow(dist_dates)],"%m/%d/%Y")
+previous_distribution <- format(dist_dates$END.DATE[nrow(dist_dates)-1],"%m/%d/%Y")
+#Confirming distribution dates
+cat("Current distribution is", distribution,
+    "\nPrevious distribution is", previous_distribution)
+answer <- select.list(choices = c("Yes", "No"),
+                      preselect = "Yes",
+                      multiple = F,
+                      title = "Correct distribution?",
+                      graphics = T)
+if (answer == "No") {
+  distribution <- select.list(choices =
+                                format(sort.POSIXlt(dist_dates$END.DATE, decreasing = T),
+                                       "%m/%d/%Y"),
+                              multiple = F,
+                              title = "Select current distribution",
+                              graphics = T)
+  which(distribution == format(dist_dates$END.DATE, "%m/%d/%Y"))
+  previous_distribution <- format(dist_dates$END.DATE[which(distribution == format(dist_dates$END.DATE, "%m/%d/%Y"))-1],"%m/%d/%Y")
+}
 
 
 # Data References ---------------------------------------------------------
