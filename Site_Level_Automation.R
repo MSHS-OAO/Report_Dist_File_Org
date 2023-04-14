@@ -42,11 +42,11 @@ zip_file_paths <- as.data.frame(zip_file_paths)
 #Site selection------------------------------------------------------------
 output_site <-
   select.list(
-    choices = c("MSHS", "MSB", "MSBI", "MSH", "MSM", "MSQ", "MSW"),
+    choices = c("MSBIB", "MSH", "MSM", "MSQ", "MSW"),
     title = "Select Output Site(s)",
     multiple = T,
     graphics = T,
-    preselect = "MSHS"
+    preselect = "MSBIB"
   )
 
 # Data Import -------------------------------------------------------------
@@ -133,10 +133,11 @@ Mapping_df <- Mapping_df %>%
              LValentino = ifelse(str_detect(Mapping_df$zip_file_paths, "LVALENTINO"), 1, 0),
              MJablons = ifelse(str_detect(Mapping_df$zip_file_paths, "MJABLONS"), 1, 0),
              CGarcenot = ifelse(str_detect(Mapping_df$zip_file_paths, "CGARCENOT"), 1, 0),
-             MOgnibene = ifelse(str_detect(Mapping_df$zip_file_paths, "MOGNIBEBE"), 1, 0),
+             MOgnibene = ifelse(str_detect(Mapping_df$zip_file_paths, "MOGNIBENE"), 1, 0),
              SHonig = ifelse(str_detect(Mapping_df$zip_file_paths, "SHONIG"), 1, 0),
              VLeyko = ifelse(str_detect(Mapping_df$zip_file_paths, "VLEYKO"), 1, 0),
-             BBarnett = ifelse(str_detect(Mapping_df$zip_file_paths, "BBARNETT"), 1, 0),
+             DMazique = ifelse(str_detect(Mapping_df$zip_file_paths, "DMAZIQUE"), 1, 0),
+             CGirdusky = ifelse(str_detect(Mapping_df$zip_file_paths, "CGIRDUSKY"), 1, 0),
              CBerner = ifelse(str_detect(Mapping_df$zip_file_paths, "CBERNER"), 1, 0),
              CCastillo = ifelse(str_detect(Mapping_df$zip_file_paths, "CCASTILLO"), 1, 0),
              CMahoney = ifelse(str_detect(Mapping_df$zip_file_paths, "CMAHONEY"), 1, 0),
@@ -156,7 +157,12 @@ Mapping_df <- Mapping_df %>%
              MSH = ifelse(str_detect(Mapping_df$File.Name, "MSH"), 1, 0),
              MSM = ifelse(str_detect(Mapping_df$File.Name, "MSM"), 1, 0),
              MSQ = ifelse(str_detect(Mapping_df$File.Name, "MSQ"), 1, 0),
-             MSW = ifelse(str_detect(Mapping_df$File.Name, "MSW"), 1, 0))
+             MSW = ifelse(str_detect(Mapping_df$File.Name, "MSW"), 1, 0),
+             MSUS = ifelse(str_detect(Mapping_df$File.Name, "MSUS200") |
+                             str_detect(Mapping_df$File.Name, "MSUS100"), 1, 0),
+             CCW = ifelse(str_detect(Mapping_df$File.Name, "CCW"), 1, 0),
+             MSH.IP.CV = ifelse(str_detect(Mapping_df$File.Name, "MSH02CV") |
+                                   str_detect(Mapping_df$File.Name, "MSH03IP"), 1, 0))
         
 Site_Mapping <- read_excel(paste0(prod_path,
                                  "R Programming/Report Distribution File Org Automation/",
@@ -182,10 +188,52 @@ file.copy(from = File_Copy_df$zip_file_paths,
 Folder_Copy_df <- Mapping_join %>%
   filter(Folder == "1")
 
+Folder_Copy_df$test <- shortPathName(Folder_Copy_df$zip_file_paths)
+
 for (g in 1:nrow(Folder_Copy_df)) {
-  dir_copy(file.path(Folder_Copy_df$zip_file_paths[g]),
+  dir_copy(file.path(Folder_Copy_df$test[g]),
                      Folder_Copy_df$`Destination Path`[g])
 }
 
-#RENAMING
+#-------------Renaming-----------------------------------------------------
+#File renaming
+APR_Renaming_mapping <- read_xlsx(paste0(prod_path,
+                                     "/R Programming/",
+                                     "Report Distribution File Org Automation/",
+                                     "Mapping/Site Renaming.xlsx"), sheet = "Admin")
 
+APR_Renaming_mapping$Old.Name.Path <- paste0(final_output_folder,
+                                         APR_Renaming_mapping$Old.Name,
+                                         distribution, ".pdf")
+APR_Renaming_mapping$Old.Name.Path <- gsub("\\\\", "/",
+                                       APR_Renaming_mapping$Old.Name.Path)
+APR_Renaming_mapping$Dir.Name <- dirname(APR_Renaming_mapping$Old.Name.Path)
+APR_Renaming_mapping$New.Name.Path <- paste0(APR_Renaming_mapping$Dir.Name, "/",
+                                         APR_Renaming_mapping$New.Name, ".pdf")
+
+file.rename(APR_Renaming_mapping$Old.Name.Path, APR_Renaming_mapping$New.Name.Path)
+
+#Folder renaming
+Folder_Renaming <- read_xlsx(paste0(prod_path,
+                                    "/R Programming/",
+                                    "Report Distribution File Org Automation/",
+                                    "Mapping/Site Renaming.xlsx"), sheet = "Folder")
+
+Folder_Renaming$Old.Name.Path <- paste0(final_output_folder, 
+                                        Folder_Renaming$Old.Name)
+Folder_Renaming$Dir.Name <- dirname(Folder_Renaming$Old.Name.Path)
+Folder_Renaming$New.Name.Path <- paste0(Folder_Renaming$Dir.Name, "/", 
+                                        Folder_Renaming$New.Name)
+file.rename(Folder_Renaming$Old.Name.Path, Folder_Renaming$New.Name.Path)
+
+#MSH renaming
+MSH_Renaming <- read_xlsx(paste0(prod_path,
+                                 "/R Programming/",
+                                 "Report Distribution File Org Automation/",
+                                 "Mapping/Site Renaming.xlsx"), sheet = "MSH")
+
+MSH_Renaming$Old.Name.Path <- paste0(final_output_folder, MSH_Renaming$Old.Name)
+MSH_Renaming$Dir.Name <- dirname(MSH_Renaming$Old.Name.Path)
+MSH_Renaming$New.Name.Path <- paste0(MSH_Renaming$Dir.Name, "/",
+                                     MSH_Renaming$New.Name, distribution)
+file.rename(MSH_Renaming$Old.Name.Path, MSH_Renaming$New.Name.Path)
