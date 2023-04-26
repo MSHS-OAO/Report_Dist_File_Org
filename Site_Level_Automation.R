@@ -105,8 +105,8 @@ if (answer == "No") {
 
 #Copying folders to output folder
 file.copy(from = paste0(prod_path, 
-"/R Programming/Report Distribution File Org Automation/Site Folder Structure/",
-output_site),
+                        "/R Programming/Report Distribution File Org Automation/Site Folder Structure/",
+                        output_site),
           to = final_output_folder, recursive = T)
 
 Folders <-
@@ -150,7 +150,7 @@ Mapping_df <- Mapping_df %>%
              EBabar = ifelse(str_detect(Mapping_df$zip_file_paths, "EBABAR"), 1, 0),
              JGoldstein = ifelse(str_detect(Mapping_df$zip_file_paths, "JGOLDSTEIN"), 1, 0),
              AdminSummary = ifelse(str_detect(Mapping_df$File.Name,
-                                             "ADMINISTRATIVE SUMMARY"), 1, 0),
+                                              "ADMINISTRATIVE SUMMARY"), 1, 0),
              MSB = ifelse(!str_detect(Mapping_df$File.Name, "MSBI") &
                             str_detect(Mapping_df$File.Name, "MSB"), 1, 0),
              MSBI = ifelse(str_detect(Mapping_df$File.Name, "MSBI"), 1, 0),
@@ -162,11 +162,11 @@ Mapping_df <- Mapping_df %>%
                              str_detect(Mapping_df$File.Name, "MSUS100"), 1, 0),
              CCW = ifelse(str_detect(Mapping_df$File.Name, "CCW"), 1, 0),
              MSH.IP.CV = ifelse(str_detect(Mapping_df$File.Name, "MSH02CV") |
-                                   str_detect(Mapping_df$File.Name, "MSH03IP"), 1, 0))
-        
+                                  str_detect(Mapping_df$File.Name, "MSH03IP"), 1, 0))
+
 Site_Mapping <- read_excel(paste0(prod_path,
-                                 "R Programming/Report Distribution File Org Automation/",
-                                 "Mapping/Site Mapping.xlsx"))
+                                  "R Programming/Report Distribution File Org Automation/",
+                                  "Mapping/Site Mapping.xlsx"))
 
 Mapping_join <- left_join(Mapping_df, Site_Mapping) %>%
   na.omit()
@@ -175,8 +175,8 @@ Mapping_join <- left_join(Mapping_df, Site_Mapping) %>%
 Mapping_join <- Mapping_join[!grepl("DO NOT USE", Mapping_join$File.Name), ]
 
 Mapping_join$`Destination Path` <- paste0(final_output_folder,
-                                           Mapping_join$`Short Folder`, "/",
-                                           Mapping_join$File.Name)
+                                          Mapping_join$`Short Folder`, "/",
+                                          Mapping_join$File.Name)
 #Copying over pdf files
 File_Copy_df <- Mapping_join %>%
   filter(Folder == "0")
@@ -192,24 +192,25 @@ Folder_Copy_df$test <- shortPathName(Folder_Copy_df$zip_file_paths)
 
 for (g in 1:nrow(Folder_Copy_df)) {
   dir_copy(file.path(Folder_Copy_df$test[g]),
-                     Folder_Copy_df$`Destination Path`[g])
+           Folder_Copy_df$`Destination Path`[g])
 }
 
+g
 #-------------Renaming-----------------------------------------------------
 #File renaming
 APR_Renaming_mapping <- read_xlsx(paste0(prod_path,
-                                     "/R Programming/",
-                                     "Report Distribution File Org Automation/",
-                                     "Mapping/Site Renaming.xlsx"), sheet = "Admin")
+                                         "/R Programming/",
+                                         "Report Distribution File Org Automation/",
+                                         "Mapping/Site Renaming.xlsx"), sheet = "Admin")
 
 APR_Renaming_mapping$Old.Name.Path <- paste0(final_output_folder,
-                                         APR_Renaming_mapping$Old.Name,
-                                         distribution, ".pdf")
+                                             APR_Renaming_mapping$Old.Name,
+                                             distribution, ".pdf")
 APR_Renaming_mapping$Old.Name.Path <- gsub("\\\\", "/",
-                                       APR_Renaming_mapping$Old.Name.Path)
+                                           APR_Renaming_mapping$Old.Name.Path)
 APR_Renaming_mapping$Dir.Name <- dirname(APR_Renaming_mapping$Old.Name.Path)
 APR_Renaming_mapping$New.Name.Path <- paste0(APR_Renaming_mapping$Dir.Name, "/",
-                                         APR_Renaming_mapping$New.Name, ".pdf")
+                                             APR_Renaming_mapping$New.Name, ".pdf")
 
 file.rename(APR_Renaming_mapping$Old.Name.Path, APR_Renaming_mapping$New.Name.Path)
 
@@ -237,3 +238,161 @@ MSH_Renaming$Dir.Name <- dirname(MSH_Renaming$Old.Name.Path)
 MSH_Renaming$New.Name.Path <- paste0(MSH_Renaming$Dir.Name, "/",
                                      MSH_Renaming$New.Name, distribution)
 file.rename(MSH_Renaming$Old.Name.Path, MSH_Renaming$New.Name.Path)
+
+
+#-------------Removing empty files------------------------------------------
+output_files <- list.files(path = final_output_folder, recursive = TRUE,
+                           full.names = TRUE)
+
+removed_files <- c()
+for (file in output_files) {
+  if (file.size(file) < 1000) {
+    file.remove(file)
+    removed_files <- c(removed_files, basename(file))
+    print(paste("Removed file:", file))
+  }
+}
+
+removed_files_df <- data.frame("Empty Files Removed" = removed_files)
+write_xlsx(removed_files_df, 
+           path = paste0(prod_path, 
+                         "/R Programming/",
+                         "Report Distribution File Org Automation/",
+                         "Quality Checks/Site/Empty Files Removed ",
+                         output_site,
+                         format(Sys.time(), '%d%b%y'),
+                         ".xlsx"))
+
+#-------Zipping files-----------------------------------------------------
+MSBIB_zipfolders <- 
+  c("MSBIB/MSB/CGarcenot Reports",
+    "MSBIB/MSB/MOgnibene Reports",
+    "MSBIB/MSB/MSB Department Reports",
+    "MSBIB/MSB/MSB VP Reports",
+    "MSBIB/MSB/SHonig Reports",
+    "MSBIB/MSB/VLeyko Reports",
+    "MSBIB/MSBI/CCastillo Reports",
+    "MSBIB/MSBI/CGirdusky Reports",
+    "MSBIB/MSBI/CMahoney Reports",
+    "MSBIB/MSBI/DMazique Reports",
+    "MSBIB/MSBI/ESellman Reports",
+    "MSBIB/MSBI/JCoffin Reports",
+    "MSBIB/MSBI/MSBI Department Reports",
+    "MSBIB/MSBI/MSBI VP Reports",
+    "MSBIB/MSUS/MSUS Department Reports",
+    "MSBIB/MSUS2/630571_CCW_RAD CCW RADIOLOGY",
+    "MSBIB/MSUS2/630571_MSUS200 MSUS PERIOP")
+
+MSH_zipfolders <-
+  c(paste0("MSH/MSH_Admin Reports_", distribution),
+    paste0("MSH/MSH_BOliver Departments_", distribution),
+    paste0("MSH/MSH_Department Reports_", distribution),
+    paste0("MSH/MSH_FCartwright Departments_", distribution),
+    paste0("MSH/MSH_MMcCarry Departments_", distribution))
+
+MSQ_zipfolders <-
+  c("MSQ/CHernandez Reports",
+    "MSQ/EBabar Reports",
+    "MSQ/JGoldstein Reports",
+    "MSQ/MSQ Department Reports")
+
+MSM_zipfolders <-
+  c("MSM/BRabill Departments",
+    "MSM/CDejesus Departments",
+    "MSM/LBorenstein Departments",
+    "MSM/MSinanavasishta Departments",
+    "MSM/MSM Department Reports",
+    "MSM/TKnox Departments")
+
+MSW_zipfolders <-
+  c("MSW/JConnolly Departments",
+    "MSW/LBorenstein Departments",
+    "MSW/LValentino Departments",
+    "MSW/MJablons Departments")
+
+if (output_site == "MSBIB") {
+  for (subfolder_name in MSBIB_zipfolders) {
+    zip_file_name <- paste0(subfolder_name, ".zip")
+    zip::zipr(zipfile = file.path(final_output_folder, zip_file_name),
+              files = file.path(final_output_folder, subfolder_name),
+              recurse = TRUE)
+  }
+} else if (output_site == "MSH") {
+  for (subfolder_name in MSH_zipfolders) {
+    zip_file_name <- paste0(subfolder_name, ".zip")
+    zip::zipr(zipfile = file.path(final_output_folder, zip_file_name),
+              files = file.path(final_output_folder, subfolder_name),
+              recurse = TRUE)
+  }
+} else if (output_site == "MSM") {
+  for (subfolder_name in MSM_zipfolders) {
+    zip_file_name <- paste0(subfolder_name, ".zip")
+    zip::zipr(zipfile = file.path(final_output_folder, zip_file_name),
+              files = file.path(final_output_folder, subfolder_name),
+              recurse = TRUE)
+  }
+} else if (output_site == "MSW") {
+  for (subfolder_name in MSW_zipfolders) {
+    zip_file_name <- paste0(subfolder_name, ".zip")
+    zip::zipr(zipfile = file.path(final_output_folder, zip_file_name),
+              files = file.path(final_output_folder, subfolder_name),
+              recurse = TRUE)
+  }
+} else if (output_site == "MSQ") {
+  for (subfolder_name in MSQ_zipfolders) {
+    zip_file_name <- paste0(subfolder_name, ".zip")
+    zip::zipr(zipfile = file.path(final_output_folder, zip_file_name),
+              files = file.path(final_output_folder, subfolder_name),
+              recurse = TRUE)
+  }
+}
+
+#------Quality Check (comparing output folder to previous month)-------------
+final_output_files <- list.files(path = final_output_folder,
+                                 recursive = TRUE, full.names = TRUE)
+
+previous_month_output <-
+  rstudioapi::selectDirectory(caption =
+                                "select the previous months output folder")
+
+previous_month_files <- list.files(path = previous_month_output,
+                                   recursive = TRUE, full.names = TRUE)
+
+previous_names <- gsub(previous_distribution, "", previous_month_files)
+current_names <- gsub(distribution, "", final_output_files)
+
+# Get the files that are in previous month but not in current month
+diff1 <- setdiff(basename(previous_names), basename(current_names))
+
+full_paths_only_in_previous <- 
+  previous_month_files[which(basename(previous_names) %in% diff1)]
+cat("Files in", previous_month_output, "but not in", final_output_folder, ":\n")
+previous_distribution_only <- data.frame(File.Names = 
+                                           basename(full_paths_only_in_previous), 
+                                         File.Paths = full_paths_only_in_previous)
+write_xlsx(previous_distribution_only, 
+           path = paste0(prod_path, 
+                         "/R Programming/",
+                         "Report Distribution File Org Automation/",
+                         "Quality Checks/Site/Reports in Previous Distribution Only ", 
+                         format(Sys.time(), '%d%b%y'),
+                         ".xlsx"))
+# Get the files that are in current month but not in previous month
+diff2 <- setdiff(basename(current_names), basename(previous_names))
+
+full_paths_only_in_current <- 
+  final_output_files[which(basename(current_names) %in% diff2)]
+cat("Files in", final_output_folder, "but not in", previous_month_output, ":\n")
+current_distribution_only <- data.frame(File.Names = 
+                                          basename(full_paths_only_in_current), 
+                                        File.Paths = full_paths_only_in_current)
+
+write_xlsx(current_distribution_only, 
+           path = paste0(prod_path, 
+                         "/R Programming/",
+                         "Report Distribution File Org Automation/",
+                         "Quality Checks/Site/Reports in Current Distribution Only ", 
+                         format(Sys.time(), '%d%b%y'),
+                         ".xlsx"))
+# Script End --------------------------------------------------------------
+
