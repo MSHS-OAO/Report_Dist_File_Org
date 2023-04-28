@@ -162,7 +162,9 @@ Mapping_df <- Mapping_df %>%
                              str_detect(Mapping_df$File.Name, "MSUS100"), 1, 0),
              CCW = ifelse(str_detect(Mapping_df$File.Name, "CCW"), 1, 0),
              MSH.IP.CV = ifelse(str_detect(Mapping_df$File.Name, "MSH02CV") |
-                                  str_detect(Mapping_df$File.Name, "MSH03IP"), 1, 0))
+                                  str_detect(Mapping_df$File.Name, "MSH03IP"), 1, 0),
+             SmallFTE = ifelse(str_detect(Mapping_df$File.Name, 
+                                          "SMALL REPORTING DEFINITIONS"), 1, 0))
 
 Site_Mapping <- read_excel(paste0(prod_path,
                                   "R Programming/Report Distribution File Org Automation/",
@@ -195,7 +197,6 @@ for (g in 1:nrow(Folder_Copy_df)) {
            Folder_Copy_df$`Destination Path`[g])
 }
 
-g
 #-------------Renaming-----------------------------------------------------
 #File renaming
 APR_Renaming_mapping <- read_xlsx(paste0(prod_path,
@@ -348,7 +349,8 @@ if (output_site == "MSBIB") {
 }
 
 #------Quality Check (comparing output folder to previous month)-------------
-final_output_files <- list.files(path = final_output_folder,
+final_output_files <- list.files(path = paste0(final_output_folder, "/",
+                                               output_site),
                                  recursive = TRUE, full.names = TRUE)
 
 previous_month_output <-
@@ -374,7 +376,8 @@ write_xlsx(previous_distribution_only,
            path = paste0(prod_path, 
                          "/R Programming/",
                          "Report Distribution File Org Automation/",
-                         "Quality Checks/Site/Reports in Previous Distribution Only ", 
+                         "Quality Checks/Site/",
+                          output_site, " Reports in Previous Distribution Only ", 
                          format(Sys.time(), '%d%b%y'),
                          ".xlsx"))
 # Get the files that are in current month but not in previous month
@@ -391,7 +394,8 @@ write_xlsx(current_distribution_only,
            path = paste0(prod_path, 
                          "/R Programming/",
                          "Report Distribution File Org Automation/",
-                         "Quality Checks/Site/Reports in Current Distribution Only ", 
+                         "Quality Checks/Site/",
+                         output_site, " Reports in Current Distribution Only ", 
                          format(Sys.time(), '%d%b%y'),
                          ".xlsx"))
 # Script End --------------------------------------------------------------
