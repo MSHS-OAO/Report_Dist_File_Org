@@ -127,7 +127,7 @@ Mapping_df <- Mapping_df %>%
              BRabill = ifelse(str_detect(Mapping_df$zip_file_paths, "BRABILL"), 1, 0),
              CDejesus = ifelse(str_detect(Mapping_df$zip_file_paths, "CDEJESUS"), 1, 0),
              LBorenstein = ifelse(str_detect(Mapping_df$zip_file_paths, "LBORENSTEIN"), 1, 0),
-             MSinanvasishta = ifelse(str_detect(Mapping_df$zip_file_paths, "MSINANAVASISHTA"), 1, 0),
+             MSinananvasishta = ifelse(str_detect(Mapping_df$zip_file_paths, "MSINANANVASISHTA"), 1, 0),
              TKnox = ifelse(str_detect(Mapping_df$zip_file_paths, "TKNOX"), 1, 0),
              JConnolly = ifelse(str_detect(Mapping_df$zip_file_paths, "JCONNOLLY"), 1, 0),
              LValentino = ifelse(str_detect(Mapping_df$zip_file_paths, "LVALENTINO"), 1, 0),
@@ -259,8 +259,8 @@ write_xlsx(removed_files_df,
            path = paste0(prod_path, 
                          "/R Programming/",
                          "Report Distribution File Org Automation/",
-                         "Quality Checks/Site/Empty Files Removed ",
-                         output_site,
+                         "Quality Checks/Site/", output_site, "/", 
+                         "Empty Files Removed ", output_site, " ",
                          format(Sys.time(), '%d%b%y'),
                          ".xlsx"))
 
@@ -301,7 +301,7 @@ MSM_zipfolders <-
   c("MSM/BRabill Departments",
     "MSM/CDejesus Departments",
     "MSM/LBorenstein Departments",
-    "MSM/MSinanavasishta Departments",
+    "MSM/MSinananvasishta Departments",
     "MSM/MSM Department Reports",
     "MSM/TKnox Departments")
 
@@ -376,10 +376,9 @@ write_xlsx(previous_distribution_only,
            path = paste0(prod_path, 
                          "/R Programming/",
                          "Report Distribution File Org Automation/",
-                         "Quality Checks/Site/",
-                          output_site, " Reports in Previous Distribution Only ", 
-                         format(Sys.time(), '%d%b%y'),
-                         ".xlsx"))
+                         "Quality Checks/Site/", output_site, "/",
+                          output_site, " Reports in Previous Distribution Only ",
+                         format(Sys.time(), '%d%b%y'), ".xlsx"))
 # Get the files that are in current month but not in previous month
 diff2 <- setdiff(basename(current_names), basename(previous_names))
 
@@ -394,9 +393,8 @@ write_xlsx(current_distribution_only,
            path = paste0(prod_path, 
                          "/R Programming/",
                          "Report Distribution File Org Automation/",
-                         "Quality Checks/Site/",
-                         output_site, " Reports in Current Distribution Only ", 
-                         format(Sys.time(), '%d%b%y'),
-                         ".xlsx"))
+                         "Quality Checks/Site/", output_site, "/",
+                         output_site, " Reports in Current Distribution Only ",
+                         format(Sys.time(), '%d%b%y'), ".xlsx"))
 # Script End --------------------------------------------------------------
 
