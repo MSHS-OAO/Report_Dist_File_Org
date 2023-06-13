@@ -295,6 +295,7 @@ MSQ_zipfolders <-
   c("MSQ/CHernandez Reports",
     "MSQ/EBabar Reports",
     "MSQ/JGoldstein Reports",
+    "MSQ/MSQ VP Reports",
     "MSQ/MSQ Department Reports")
 
 MSM_zipfolders <-
